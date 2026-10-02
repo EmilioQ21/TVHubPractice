@@ -54,10 +54,16 @@ export const getChannel: RequestHandler = async (request, response) => {
   // TODO 2, 3 y 4:
   // Buscar el canal activo, responder 404 si no existe y devolverlo como JSON.
   // Mientras el ejercicio está pendiente, mantenemos una respuesta explícita y válida.
-  response.status(501).json({
-    error: {
-      code: 'CHANNEL_WATCH_NOT_IMPLEMENTED',
-      message: `Watching channel ${channelId} is not implemented yet`
-    }
-  });
-};
+ const channel = await Channel.findOne({
+  _id: channelId,
+  isActive: true
+}); 
+  if (!channel) {
+  throw new AppError(
+    404,
+    'CHANNEL_NOT_FOUND',
+    'Channel was not found'
+  );
+}
+  response.json({ channel });
+}

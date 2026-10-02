@@ -14,7 +14,7 @@ const reportSchema = new Schema(
     channelId: { type: Schema.Types.ObjectId, ref: 'Channel', required: true },
     reason: { type: String, enum: reportReasons, required: true },
     description: { type: String, required: true, trim: true, maxlength: 1000 },
-    evidenceUrl: { type: String, trim: true },
+    evidenceUrls: { type: [String], trim: true },
     status: { type: String, enum: ['OPEN'], required: true, default: 'OPEN' }
   },
   { timestamps: true }

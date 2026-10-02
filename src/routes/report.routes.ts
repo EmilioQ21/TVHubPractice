@@ -2,6 +2,8 @@ import { Router } from 'express';
 import { createReport, listReports } from '../controllers/report.controller.js';
 import { authenticate } from '../middleware/authenticate.middleware.js';
 import { upload } from '../middleware/upload.js';
+import { updateReport } from '../controllers/report.controller.js';
+import { deleteReport } from '../controllers/report.controller.js';
 
 export const reportRouter = Router();
 
@@ -13,6 +15,18 @@ reportRouter.get('/', authenticate, listReports);
 reportRouter.post(
   '/',
   authenticate,
-  upload.________('evidence'),
+  upload.array('evidence',5),
   createReport
+);
+
+reportRouter.patch(
+  '/:id',
+  authenticate,
+  updateReport
+);
+
+reportRouter.delete(
+  '/:id',
+  authenticate,
+  deleteReport
 );

@@ -17,30 +17,126 @@ function formatReason(reason) {
   return reason.toLowerCase().split('_').map((word) => `${word[0].toUpperCase()}${word.slice(1)}`).join(' ');
 }
 
+async function updateReport(reportId, reason, description, status) {
+  const response = await fetch(`/api/reports/${reportId}`, {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      reason,
+      description,
+      status
+    })
+  });
+
+  if (!response.ok) {
+    const payload = await response.json().catch(() => ({}));
+    throw new Error(
+      payload.error?.message || 'Could not update the report.'
+    );
+  }
+
+  return response.json();
+}
+
+async function deleteReport(reportId) {
+  const response = await fetch(`/api/reports/${reportId}`, {
+    method: 'DELETE'
+  });
+
+  if (!response.ok) {
+    const payload = await response.json().catch(() => ({}));
+    throw new Error(
+      payload.error?.message || 'Could not delete the report.'
+    );
+  }
+
+  return response.json();
+}
+
 function createReportItem(report) {
   const item = document.createElement('article');
   item.className = 'report-item';
+
   const channel = document.createElement('h3');
   channel.textContent = report.channelId?.name || 'Channel unavailable';
+
   const reason = document.createElement('p');
   reason.textContent = `Reason: ${formatReason(report.reason)}`;
+
   const description = document.createElement('p');
   description.textContent = report.description;
+
   const status = document.createElement('p');
   status.className = 'report-status';
   status.textContent = report.status;
+
   const created = document.createElement('p');
   created.className = 'report-date';
   created.textContent = new Date(report.createdAt).toLocaleString();
+
   item.append(channel, reason, description, status, created);
-  if (report.evidenceUrl) {
-    const evidence = document.createElement('a');
-    evidence.href = report.evidenceUrl;
-    evidence.target = '_blank';
-    evidence.rel = 'noopener';
-    evidence.textContent = 'View evidence image';
-    item.append(evidence);
+
+  const editButton = document.createElement('button');
+  editButton.textContent = 'Edit';
+
+  editButton.addEventListener('click', async () => {
+    const newReason = prompt('Reason:', report.reason);
+    const newDescription = prompt('Description:', report.description);
+    const newStatus = prompt('Status:', report.status);
+
+    if (!newReason || !newDescription || !newStatus) return;
+
+    try {
+      await updateReport(
+        report._id,
+        newReason,
+        newDescription,
+        newStatus
+      );
+
+      await loadReports();
+    } catch (error) {
+      alert(error.message);
+    }
+  });
+
+  item.append(editButton);
+
+  const deleteButton = document.createElement('button');
+  deleteButton.textContent = 'Delete';
+
+  deleteButton.addEventListener('click', async () => {
+    const confirmed = confirm(
+      'Are you sure you want to delete this report?'
+    );
+
+    if (!confirmed) return;
+
+    try {
+      await deleteReport(report._id);
+      await loadReports();
+    } catch (error) {
+      alert(error.message);
+    }
+  });
+
+  item.append(deleteButton);
+
+  if (Array.isArray(report.evidenceUrls) && report.evidenceUrls.length > 0) {
+    for (const url of report.evidenceUrls) {
+      const evidence = document.createElement('a');
+
+      evidence.href = url;
+      evidence.target = '_blank';
+      evidence.rel = 'noopener noreferrer';
+      evidence.textContent = 'View evidence image';
+
+      item.append(evidence);
+    }
   }
+
   return item;
 }
 
@@ -62,15 +158,15 @@ async function submitReport(event) {
   formData.append('channelId', channelId);
   formData.append('reason', document.querySelector('#report-reason').value);
   formData.append('description', document.querySelector('#report-description').value);
-  const evidence =
-    document.querySelector('#report-evidence').files[0];
+  const evidenceFiles =
+    document.querySelector('#report-evidence').files;
   // TODO v4.5 4:
   // Completa el nombre del campo utilizado para enviar la imagen.
   // Objetivo: relacionar el archivo del formulario con upload.single().
   // Resultado esperado: Multer reconocerá la evidencia enviada por el navegador.
-  if (evidence) {
-    formData.append('________', evidence);
-  }
+  for (const file of evidenceFiles) {
+  formData.append('evidence', file);
+}
 
   reportFormStatus.textContent = 'Submitting report…';
   // TODO v4.5 5:
@@ -79,7 +175,7 @@ async function submitReport(event) {
   // Resultado esperado: POST /api/reports recibirá correctamente multipart/form-data.
   const response = await fetch('/api/reports', {
     method: 'POST',
-    body: ________
+    body: formData
   });
   if (!response.ok) {
     const payload = await response.json().catch(() => ({}));

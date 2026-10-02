@@ -71,6 +71,7 @@ La importación individual usa país más `tvgId` o, si falta, país más `strea
 
 La práctica deja intencionalmente incompletos los TODOs de Watch. Antes de resolverlos, la compilación y las pruebas que cargan Express pueden fallar; esto es parte del ejercicio.
 
+
 Un clon nuevo usa `.env.example` automáticamente en desarrollo, por lo que no requiere crear un `.env` para empezar la clase. Si se necesita personalizar la configuración local, crear el archivo ignorado por Git:
 
 ```bash
