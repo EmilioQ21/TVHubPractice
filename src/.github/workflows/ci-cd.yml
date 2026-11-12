@@ -1,0 +1,43 @@
+name: CI/CD TV Hub
+
+on:
+  push:
+    branches: [tv-hub-v5-base]
+  pull_request:
+    branches: [tv-hub-v5-base]
+
+jobs:
+  ci:
+    name: Tests y build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configurar Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Instalar dependencias
+        run: npm ci
+
+      - name: Pruebas
+        run: npm test
+
+      - name: Compilar
+        run: npm run build
+
+  deploy:
+    name: Solicitar deploy en Render
+    needs: ci
+    if: github.event_name == 'push' && github.ref == 'refs/heads/tv-hub-v5-base'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Llamar Deploy Hook
+        env:
+          DEPLOY_HOOK: ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
+        run: |
+          echo "Solicitando deploy del commit ${GITHUB_SHA}"
+          curl -fsS -X POST "${DEPLOY_HOOK}&ref=${GITHUB_SHA}"
