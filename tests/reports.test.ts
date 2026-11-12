@@ -86,8 +86,9 @@ test('an image evidence file is stored and exposed through its URL', async () =>
     description: 'The image is frozen.'
   }).attach('evidence', Buffer.from('image evidence'), { filename: 'evidence.png', contentType: 'image/png' }).expect(201);
 
-  expect(created.body.report.evidenceUrl).toMatch(/^\/uploads\/reports\/.+\.png$/);
-  await request(app).get(created.body.report.evidenceUrl).expect(200);
+  expect(created.body.report.evidenceUrls).toHaveLength(1);
+  expect(created.body.report.evidenceUrls[0]).toMatch(/^\/uploads\/reports\/.+\.png$/);
+  await request(app).get(created.body.report.evidenceUrls[0]).expect(200);
 });
 
 test('reports reject invalid report data and invalid files', async () => {
